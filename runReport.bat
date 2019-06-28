@@ -1,0 +1,1 @@
+newman run "UAPI 1G Basic Flow.postman_collection.json" -e Prod.postman_environment.json -r html,cli --reporter-html-template "C:\Users\Marcel.toma\OneDrive - Travelport\newmanReport\awesome-newman-html-template\templates\htmlreqres.hbs"

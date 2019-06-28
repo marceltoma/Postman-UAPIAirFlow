@@ -1,0 +1,629 @@
+{
+	"info": {
+		"_postman_id": "ce343dad-d566-4d02-b385-f271cd0337d6",
+		"name": "UAPI Air 1G Basic Flow",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "LowFareSeach",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "4514562a-21a5-4f2e-8af8-078232dac208",
+						"type": "text/javascript",
+						"exec": [
+							"AirPricingSolutionIndex = 0; // <--- Change this value to select the segments you want in AirPrice based on the ",
+							"                            // AirPricingSolution, 0=use the first AirPricingSolution to find the segments.",
+							"",
+							"",
+							"cheerio = require('cheerio');",
+							"const $ = cheerio.load(responseBody, {",
+							"  ignoreWhitespace: true,",
+							"  xmlMode: true",
+							"});",
+							"",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Response has flights', function () {",
+							"  pm.expect($('air\\\\:FlightDetails').length).not.equal(0);",
+							"});",
+							"",
+							"pm.test('Not SOAP Fault', function () {",
+							"    pm.expect($('SOAP\\\\:Fault').length).equal(0);",
+							"});",
+							"",
+							"",
+							"//console.log($('air\\\\:AirPricingSolution').first().attr('Key'));",
+							"//console.log($('air\\\\:AirPricingSolution').first().find('air\\\\:AirSegmentRef').first().attr('Key'));",
+							"",
+							"AirPricingSolution = $('air\\\\:AirPricingSolution').eq(AirPricingSolutionIndex); ",
+							"",
+							"var segments = [];",
+							"AirPricingSolution.find('air\\\\:AirSegmentRef').each(function (idx, element) {",
+							"    var segment = $('air\\\\:AirSegmentList > air\\\\:AirSegment[Key=\\''+$(this).attr('Key')+'\\']');",
+							"    console.log(idx + \" - Flight \" + segment.attr('FlightNumber') + ' - ' + $(this).attr('Key'));",
+							"    //$(segment).find('air\\\\:FlightDetailsRef').remove();",
+							"    $(segment).children().remove();",
+							"    $(segment).attr('ProviderCode', '1G');",
+							"    $(segment).attr('ClassOfService', AirPricingSolution.find('air\\\\:BookingInfo').eq(idx).attr('BookingCode'));",
+							"    console.log($.html($(segment)));",
+							"    segments += segment;",
+							"});",
+							"",
+							"pm.globals.set(\"Segments\", segments);",
+							"//pm.globals.set(\"AirPricingSolution\", AirPricingSolution);",
+							"",
+							""
+						]
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "956f23cf-426d-42e3-b2e6-d91350f6ac90",
+						"type": "text/javascript",
+						"exec": [
+							"console.log(pm.info.requestName);",
+							"/*",
+							"cheerio = require('cheerio');",
+							"const $ = cheerio.load(request.data, {",
+							"  ignoreWhitespace: true,",
+							"  xmlMode: true",
+							"});",
+							"",
+							"",
+							"$('air\\\\:LowFareSearchReq').attr('TargetBranch', \"TESTE\");",
+							"",
+							"pm.request.body = $.xml();",
+							"console.log(pm.request);",
+							"pm.request.update($.xml());",
+							"",
+							"*/"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n   <soap:Body>\r\n\t<air:LowFareSearchReq TraceId=\"{{$guid}}\" TargetBranch=\"{{Branch}}\" ReturnUpsellFare=\"true\" SolutionResult=\"true\" xmlns:com=\"http://www.travelport.com/schema/common_{{SchemaVersion}}_0\" xmlns:air=\"http://www.travelport.com/schema/air_{{SchemaVersion}}_0\">\r\n\t  <com:BillingPointOfSaleInfo OriginApplication=\"{{OriginApplication}}\" />\r\n\t  <air:SearchAirLeg>\r\n\t    <air:SearchOrigin>\r\n\t      <com:CityOrAirport Code=\"BSB\" PreferCity=\"true\" />\r\n\t    </air:SearchOrigin>\r\n\t    <air:SearchDestination>\r\n\t      <com:CityOrAirport Code=\"SDU\" PreferCity=\"true\" />\r\n\t    </air:SearchDestination>\r\n\t    <air:SearchDepTime PreferredTime=\"2019-06-08\" />\r\n\t\t\t\t<air:AirLegModifiers>\r\n\t\t\t\t\t<air:PermittedCarriers>\r\n\t\t\t\t\t\t<com:Carrier Code=\"LA\" />\r\n\t\t\t\t\t\t<com:Carrier Code=\"JJ\" />\r\n\t\t\t\t\t</air:PermittedCarriers>\r\n\t\t\t\t</air:AirLegModifiers>\r\n\t  </air:SearchAirLeg>\r\n\t  <air:SearchAirLeg>\r\n\t    <air:SearchOrigin>\r\n\t      <com:CityOrAirport Code=\"SDU\" PreferCity=\"true\" />\r\n\t    </air:SearchOrigin>\r\n\t    <air:SearchDestination>\r\n\t      <com:CityOrAirport Code=\"CWB\" PreferCity=\"true\" />\r\n\t    </air:SearchDestination>\r\n\t    <air:SearchDepTime PreferredTime=\"2019-06-15\" />\r\n\t\t\t\t<air:AirLegModifiers>\r\n\t\t\t\t\t<air:PermittedCarriers>\r\n\t\t\t\t\t\t<com:Carrier Code=\"LA\" />\r\n\t\t\t\t\t\t<com:Carrier Code=\"JJ\" />\r\n\t\t\t\t\t</air:PermittedCarriers>\r\n\t\t\t\t</air:AirLegModifiers>\r\n\t  </air:SearchAirLeg>\r\n\t  <air:AirSearchModifiers>\r\n\t    <air:PreferredProviders>\r\n\t      <com:Provider Code=\"1G\" />\r\n\t    </air:PreferredProviders>\r\n    <air:PermittedCarriers>\r\n      <com:Carrier Code=\"LA\" />\r\n      <com:Carrier Code=\"JJ\" />\r\n    </air:PermittedCarriers>\r\n\t  </air:AirSearchModifiers>\r\n\t  <com:SearchPassenger Code=\"ADT\" Age=\"40\" DOB=\"1975-06-05\" />\r\n\t</air:LowFareSearchReq>\r\n   </soap:Body>\r\n</soap:Envelope>"
+				},
+				"url": {
+					"raw": "{{URL}}/AirService",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"AirService"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AirPrice",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "cb1771b4-2aa1-4159-b29d-05778dcf5b44",
+						"type": "text/javascript",
+						"exec": [
+							"",
+							"",
+							"cheerio = require('cheerio');",
+							"const $ = cheerio.load(responseBody, {",
+							"  ignoreWhitespace: true,",
+							"  xmlMode: true",
+							"});",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Not SOAP Fault', function () {",
+							"    pm.expect($('SOAP\\\\:Fault').length).equal(0);",
+							"});",
+							"",
+							"AirPricingSolution = $('air\\\\:AirPricingSolution').eq(0); // Change this value to select the AirPricingSolution",
+							"",
+							"AirPricingSolution.find('air\\\\:Brand').children().remove();",
+							"AirPricingSolution.find('air\\\\:BaggageAllowances').remove();",
+							"AirPricingSolution.find('air\\\\:OptionalServices').remove();",
+							"AirPricingSolution.find('air\\\\:FareNote').remove();",
+							"AirPricingSolution.find('air\\\\:AirSegmentRef').remove();",
+							"",
+							"AirPricingSolution.prepend($('air\\\\:AirSegment'));",
+							"",
+							"//$('common_v44_0\\\\:HostToken').get(0).tagName = 'com:HostToken';",
+							"",
+							"$('*').each(function () {",
+							"    if ($(this).get(0).tagName.startsWith(\"common_\")) {",
+							"        $(this).get(0).tagName = \"com:\" + $(this).get(0).tagName.split(':')[1];",
+							"    }",
+							"});",
+							"",
+							"//console.log($.html($(AirPricingSolution)));",
+							"console.log('TotalPrice=' + AirPricingSolution.attr('TotalPrice'));",
+							"AirPricingSolution.find('air\\\\:FareInfo').each (function(idx, ele) {",
+							"    console.log('FareBasis='+$(this).attr('FareBasis')+' Brand='+$(this).children('air\\\\:Brand').attr('Name'));",
+							"});",
+							"",
+							"",
+							"pm.globals.set(\"AirPricingSolution\", $.html($(AirPricingSolution)));"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n   <soap:Body>\r\n      <air:AirPriceReq TraceId=\"{{$guid}}\" TargetBranch=\"{{Branch}}\" FareRuleType=\"short\" CheckFlightDetails=\"true\" xmlns:air=\"http://www.travelport.com/schema/air_{{SchemaVersion}}_0\" xmlns:com=\"http://www.travelport.com/schema/common_{{SchemaVersion}}_0\">\r\n         <com:BillingPointOfSaleInfo OriginApplication=\"{{OriginApplication}}\"/>\r\n         <air:AirItinerary>\r\n\t\t\t{{Segments}}\r\n         </air:AirItinerary>\r\n         <air:AirPricingModifiers>\r\n            <air:BrandModifiers ModifierType=\"FareFamilyDisplay\"/>\r\n         </air:AirPricingModifiers>\r\n         <com:SearchPassenger Code=\"ADT\" Key=\"1\"/>\r\n      </air:AirPriceReq>\r\n   </soap:Body>\r\n</soap:Envelope>"
+				},
+				"url": {
+					"raw": "{{URL}}/AirService",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"AirService"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AirCreateReservation",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "171bcc16-ded2-4f2f-8264-6ec32be7b566",
+						"type": "text/javascript",
+						"exec": [
+							"cheerio = require('cheerio');",
+							"",
+							"const $ = cheerio.load(responseBody, {",
+							"  ignoreWhitespace: true,",
+							"  xmlMode: true",
+							"});",
+							"",
+							"const req = cheerio.load(request.data, {",
+							"  ignoreWhitespace: true,",
+							"  xmlMode: true",
+							"});",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Not SOAP Fault', function () {",
+							"    pm.expect($('SOAP\\\\:Fault').length).equal(0);",
+							"});",
+							"",
+							"pm.expect(req('air\\\\:AirPricingSolution').length).to.be.above(0);",
+							"",
+							"pm.test('Was able to correctly add fare', function () {",
+							"    $('common_v44_0\\\\:ResponseMessage').each(function () {",
+							"        pm.expect($(this).text()).not.be.a(\"NO FARES\");",
+							"    });",
+							"});",
+							"",
+							"",
+							"pm.globals.set(\"UniversalRecordLoc\", $('universal\\\\:UniversalRecord').attr('LocatorCode'));",
+							"pm.globals.set(\"ProviderLoc\", $('universal\\\\:ProviderReservationInfo').attr('LocatorCode'));",
+							"pm.globals.set(\"AirReservationLoc\", $('air\\\\:AirReservation').attr('LocatorCode'));",
+							"",
+							"pm.globals.set(\"BookingTravelerRef\", $('common_v44_0\\\\:BookingTraveler').attr('Key'));",
+							"pm.globals.set(\"AirPricingInfoRef\", $('air\\\\:AirPricingInfo').attr('Key'));",
+							"pm.globals.set(\"version\", $('universal\\\\:UniversalRecord').attr('Version'));",
+							""
+						]
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "4c4133aa-0538-4140-8bd7-008d481f33b3",
+						"type": "text/javascript",
+						"exec": [
+							"var dat = new Date();",
+							"dat.setDate(dat.getDate() + 1);",
+							"  ",
+							"pm.globals.set(\"TicketDate\", dat);",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n\t<soap:Body>\r\n\t\t<univ:AirCreateReservationReq AuthorizedBy=\"TOMAMARCEL\" LanguageCode=\"PTBR\" TraceId=\"{{TraceId}}\" TargetBranch=\"{{Branch}}\" xmlns:univ=\"http://www.travelport.com/schema/universal_{{SchemaVersion}}_0\" xmlns:com=\"http://www.travelport.com/schema/common_{{SchemaVersion}}_0\" xmlns:air=\"http://www.travelport.com/schema/air_{{SchemaVersion}}_0\">\r\n\t\t\t<com:BillingPointOfSaleInfo OriginApplication=\"{{OriginApplication}}\"/>\r\n\t\t\t<com:BookingTraveler Key=\"1\" TravelerType=\"ADT\" VIP=\"false\" DOB=\"1979-09-27\" Gender=\"M\" Nationality=\"BR\">\r\n\t\t\t\t<com:BookingTravelerName Prefix=\"MR\" First=\"MARCEL\" Middle=\"KEITI\" Last=\"TOMA\"/>\r\n\t\t\t\t<com:PhoneNumber Type=\"Work\" CountryCode=\"55\" AreaCode=\"11\" Number=\"35495447\"/>\r\n\t\t\t\t<com:Email Type=\"Work\" EmailID=\"marcel.toma@travelport.com\"/>\r\n\t\t\t\t<com:Address>\r\n\t\t\t\t\t<com:AddressName>Work</com:AddressName>\r\n\t\t\t\t\t<com:Street>AV PAULISTA</com:Street>\r\n\t\t\t\t\t<com:City>SAO PAULO</com:City>\r\n\t\t\t\t\t<com:State>SP</com:State>\r\n\t\t\t\t\t<com:PostalCode>01311000</com:PostalCode>\r\n\t\t\t\t\t<com:Country>BR</com:Country>\r\n\t\t\t\t</com:Address>\r\n\t\t\t</com:BookingTraveler>\r\n\r\n\t\t\t{{AirPricingSolution}}\r\n\r\n\t\t\t<com:ActionStatus Type=\"TAU\" TicketDate=\"{{TicketDate}}\" ProviderCode=\"1G\"/>\r\n\t\t</univ:AirCreateReservationReq>\r\n\t</soap:Body>\r\n</soap:Envelope>"
+				},
+				"url": {
+					"raw": "{{URL}}/AirService",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"AirService"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AirTicketing",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "65127b73-6649-4c8a-b027-d95ed9e7f68a",
+						"type": "text/javascript",
+						"exec": [
+							"cheerio = require('cheerio');",
+							"",
+							"const $ = cheerio.load(responseBody, {",
+							"  ignoreWhitespace: true,",
+							"  xmlMode: true",
+							"});",
+							"",
+							"const req = cheerio.load(request.data, {",
+							"  ignoreWhitespace: true,",
+							"  xmlMode: true",
+							"});",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Not SOAP Fault', function () {",
+							"    pm.expect($('SOAP\\\\:Fault').length).equal(0);",
+							"});",
+							"",
+							"",
+							"pm.globals.set(\"TicketNumber\", $('air\\\\:Ticket').attr('TicketNumber'));"
+						]
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "1f18868f-2082-47ed-8dec-88d65eb6c4e0",
+						"type": "text/javascript",
+						"exec": [
+							"var dat = new Date();",
+							"dat.setDate(dat.getDate() + 1);",
+							"  ",
+							"pm.globals.set(\"TicketDate\", dat);",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n\t<soap:Body>\r\n\t\t<air:AirTicketingReq xmlns:air=\"http://www.travelport.com/schema/air_{{SchemaVersion}}_0\" AuthorizedBy=\"user\" BulkTicket=\"false\" ReturnInfoOnFail=\"true\" TargetBranch=\"{{Branch}}\" TraceId=\"trace\" xmlns:com=\"http://www.travelport.com/schema/common_{{SchemaVersion}}_0\">\r\n\t\t\t<com:BillingPointOfSaleInfo OriginApplication=\"{{OriginApplication}}\" />\r\n\t\t\t<air:AirReservationLocatorCode>{{AirReservationLoc}}</air:AirReservationLocatorCode>\r\n\t\t\t<air:AirPricingInfoRef Key=\"{{AirPricingInfoRef}}\" />\r\n\t\t\t<air:AirTicketingModifiers>\r\n\t\t\t\t<com:FormOfPayment Type=\"MiscFormOfPayment\">\r\n\t\t\t\t\t<com:MiscFormOfPayment Text=\"123456\" Category=\"Invoice\" />\r\n\t\t\t\t</com:FormOfPayment>\r\n\t\t\t</air:AirTicketingModifiers>\r\n\t\t</air:AirTicketingReq>\r\n\t</soap:Body>\r\n</soap:Envelope>"
+				},
+				"url": {
+					"raw": "{{URL}}/AirService",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"AirService"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "AirTicketing",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "text/xml",
+								"disabled": false
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n\t<soap:Body>\r\n\t\t<air:AirTicketingReq xmlns:air=\"http://www.travelport.com/schema/air_{{SchemaVersion}}_0\" AuthorizedBy=\"user\" BulkTicket=\"false\" ReturnInfoOnFail=\"true\" TargetBranch=\"{{Branch}}\" TraceId=\"trace\" xmlns:com=\"http://www.travelport.com/schema/common_{{SchemaVersion}}_0\">\r\n\t\t\t<com:BillingPointOfSaleInfo OriginApplication=\"{{OriginApplication}}\" />\r\n\t\t\t<air:AirReservationLocatorCode>{{AirReservationLoc}}</air:AirReservationLocatorCode>\r\n\t\t\t<air:AirPricingInfoRef Key=\"{{AirPricingInfoRef}}\" />\r\n\t\t\t<air:AirTicketingModifiers>\r\n\t\t\t\t<com:FormOfPayment Type=\"MiscFormOfPayment\">\r\n\t\t\t\t\t<com:MiscFormOfPayment Text=\"123456\" Category=\"Invoice\" />\r\n\t\t\t\t</com:FormOfPayment>\r\n\t\t\t</air:AirTicketingModifiers>\r\n\t\t</air:AirTicketingReq>\r\n\t</soap:Body>\r\n</soap:Envelope>"
+						},
+						"url": {
+							"raw": "{{URL}}/AirService",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"AirService"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "xml",
+					"header": [
+						{
+							"key": "Connection",
+							"value": "close",
+							"name": "Connection",
+							"description": "Options that are desired for the connection"
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip",
+							"name": "Content-Encoding",
+							"description": "The type of encoding used on the data."
+						},
+						{
+							"key": "Content-Language",
+							"value": "en-US",
+							"name": "Content-Language",
+							"description": "The language the content is in"
+						},
+						{
+							"key": "Content-Type",
+							"value": "text/xml",
+							"name": "Content-Type",
+							"description": "The mime type of this content"
+						},
+						{
+							"key": "DPTransID",
+							"value": "d168b14856924ac88cb86c8dd824ede8TFDPGHD33",
+							"name": "DPTransID",
+							"description": "Custom header"
+						},
+						{
+							"key": "Date",
+							"value": "Wed, 29 Aug 2018 22:29:29 GMT",
+							"name": "Date",
+							"description": "The date and time that the message was sent"
+						},
+						{
+							"key": "SSLTerm",
+							"value": "216.113.156.87%3A443%2C%2FTF-COM_API%2FAMERICAS_UNIVERSAL-API_443",
+							"name": "SSLTerm",
+							"description": "Custom header"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked",
+							"name": "Transfer-Encoding",
+							"description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
+						},
+						{
+							"key": "X-Backside-Transport",
+							"value": "OK OK",
+							"name": "X-Backside-Transport",
+							"description": "Custom header"
+						},
+						{
+							"key": "X-Client-IP",
+							"value": "10.7.208.153",
+							"name": "X-Client-IP",
+							"description": "Custom header"
+						},
+						{
+							"key": "X-Global-Transaction-ID",
+							"value": "1417677279",
+							"name": "X-Global-Transaction-ID",
+							"description": "Custom header"
+						},
+						{
+							"key": "X-Powered-By",
+							"value": "Servlet/3.0",
+							"name": "X-Powered-By",
+							"description": "Specifies the technology (ASP.NET, PHP, JBoss, e.g.) supporting the web application (version details are often in X-Runtime, X-Version, or X-AspNet-Version)"
+						},
+						{
+							"key": "passwordEndDt",
+							"value": "20141220",
+							"name": "passwordEndDt",
+							"description": "Custom header"
+						}
+					],
+					"cookie": [],
+					"body": "<SOAP:Envelope xmlns:SOAP=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP:Body><air:AirTicketingRsp TraceId=\"trace\" TransactionId=\"87CE4ADD0A0759C723E7685A1EE6E9C9\" ResponseTime=\"2100\" xmlns:air=\"http://www.travelport.com/schema/air_v44_0\" xmlns:common_v44_0=\"http://www.travelport.com/schema/common_v44_0\"><common_v44_0:ResponseMessage Code=\"0\" Type=\"Info\" ProviderCode=\"1G\">PNR 61X76W Fare 1 - ELECTRONIC TKT GENERATED TTL FARE  BRL    393.66 SUPPORTING DOCUMENTS GENERATED ITIN/INVOICE GENERATED MIR GENERATED - TTL FARE  BRL    393.66 -------------------------------------</common_v44_0:ResponseMessage><common_v44_0:ResponseMessage Code=\"0\" Type=\"Info\" ProviderCode=\"1G\">OK:Ticket issued</common_v44_0:ResponseMessage><air:ETR Key=\"ouvmxVBAAA/B0pgWAJAAAA==\" TotalPrice=\"BRL393.66\" BasePrice=\"BRL292.90\" Taxes=\"BRL100.76\" Refundable=\"true\" Exchangeable=\"true\" IssuedDate=\"2018-08-29T00:00:00.000-03:00\" ProviderCode=\"1G\" ProviderLocatorCode=\"61X76W\" IATANumber=\"57300014\" PseudoCityCode=\"79GG\" PlatingCarrier=\"JJ\" ElStat=\"A\"><air:AirReservationLocatorCode>WYT4AS</air:AirReservationLocatorCode><common_v44_0:AgencyInfo><common_v44_0:AgentAction ActionType=\"Created\" AgentCode=\"UAPI3067477469-6A5C215F\" BranchCode=\"P1857470\" AgencyCode=\"S1857461\" EventTime=\"2018-08-29T00:00:00.000-03:00\"/></common_v44_0:AgencyInfo><common_v44_0:BookingTraveler Key=\"XOTzxVdc1BKArUWC6IAAAA==\" TravelerType=\"ADT\" VIP=\"false\" DOB=\"1979-09-27\" Gender=\"M\"><common_v44_0:BookingTravelerName Prefix=\"MR\" First=\"MARCEL\" Middle=\"KEITI\" Last=\"TOMA\"/><common_v44_0:PhoneNumber Key=\"XOTzxVdc1BKAsUWC6IAAAA==\" Type=\"None\" Location=\"RIO\" CountryCode=\"55\" Number=\"35495447\" AreaCode=\"11\"><common_v44_0:ProviderReservationInfoRef Key=\"XOTzxVdc1BKAc2nC6IAAAA==\"/></common_v44_0:PhoneNumber><common_v44_0:Email Key=\"XOTzxVdc1BKAtUWC6IAAAA==\" Type=\"Work\" EmailID=\"marcel.toma@travelport.com\"><common_v44_0:ProviderReservationInfoRef Key=\"XOTzxVdc1BKAc2nC6IAAAA==\"/></common_v44_0:Email><common_v44_0:SSR Key=\"ouvmxVBAAA/B9pgWAJAAAA==\" SegmentRef=\"C+QsxVBAAA/BWbD/8IAAAA==\" Status=\"HK\" Type=\"TKNE\" FreeText=\"9579902731369C1/369-370\" Carrier=\"LA\" ProviderReservationInfoRef=\"XOTzxVdc1BKAc2nC6IAAAA==\" ElStat=\"A\"/><common_v44_0:SSR Key=\"ouvmxVBAAA/B+pgWAJAAAA==\" SegmentRef=\"C+QsxVBAAA/BYbD/8IAAAA==\" Status=\"HK\" Type=\"TKNE\" FreeText=\"9579902731369C2/369-370\" Carrier=\"LA\" ProviderReservationInfoRef=\"XOTzxVdc1BKAc2nC6IAAAA==\" ElStat=\"A\"/><common_v44_0:SSR Key=\"ouvmxVBAAA/B/pgWAJAAAA==\" SegmentRef=\"C+QsxVBAAA/BabD/8IAAAA==\" Status=\"HK\" Type=\"TKNE\" FreeText=\"9579902731369C4/369-370\" Carrier=\"LA\" ProviderReservationInfoRef=\"XOTzxVdc1BKAc2nC6IAAAA==\" ElStat=\"A\"/><common_v44_0:SSR Key=\"ouvmxVBAAA/BAqgWAJAAAA==\" SegmentRef=\"C+QsxVBAAA/BcbD/8IAAAA==\" Status=\"HK\" Type=\"TKNE\" FreeText=\"9579902731370C1/369-370\" Carrier=\"LA\" ProviderReservationInfoRef=\"XOTzxVdc1BKAc2nC6IAAAA==\" ElStat=\"A\"/><common_v44_0:Address Key=\"XOTzxVdc1BKAuUWC6IAAAA==\"><common_v44_0:AddressName>Work</common_v44_0:AddressName><common_v44_0:Street>AV PAULISTA</common_v44_0:Street><common_v44_0:City>SAO PAULO</common_v44_0:City><common_v44_0:State>SP</common_v44_0:State><common_v44_0:PostalCode>01311000</common_v44_0:PostalCode><common_v44_0:Country>BR</common_v44_0:Country><common_v44_0:ProviderReservationInfoRef Key=\"XOTzxVdc1BKAc2nC6IAAAA==\"/></common_v44_0:Address></common_v44_0:BookingTraveler><common_v44_0:FormOfPayment Key=\"ouvmxVBAAA/BypgWAJAAAA==\" Type=\"MiscFormOfPayment\" Reusable=\"false\" ProfileKey=\"Ln2RtrZFRfSbyy00556CWQ==\"><common_v44_0:MiscFormOfPayment Category=\"Text\"/></common_v44_0:FormOfPayment><common_v44_0:Payment Key=\"ouvmxVBAAA/BzpgWAJAAAA==\" Type=\"Itinerary\" Amount=\"BRL393.66\" FormOfPaymentRef=\"ouvmxVBAAA/BypgWAJAAAA==\"/><common_v44_0:SupplierLocator SupplierCode=\"LA\" SupplierLocatorCode=\"RTQLXD\"/><air:FareCalc>BSB LA X/SAO LA RIO 132.00 LA X/SAO LA CWB 160.90 BRL292.90END</air:FareCalc><air:Ticket Key=\"ouvmxVBAAA/B3pgWAJAAAA==\" TicketNumber=\"9579902731369\" TicketStatus=\"N\" ElStat=\"A\"><air:Coupon Key=\"ouvmxVBAAA/B4pgWAJAAAA==\" CouponNumber=\"1\" MarketingCarrier=\"LA\" MarketingFlightNumber=\"3101\" Origin=\"BSB\" Destination=\"CGH\" DepartureTime=\"2018-11-08T12:05:00.000-02:00\" StopoverCode=\"true\" BookingClass=\"O\" FareBasis=\"OJSX0G1\" NotValidBefore=\"2018-11-08\" NotValidAfter=\"2018-11-08\" Status=\"O\" SegmentGroup=\"0\" MarriageGroup=\"0\" ElStat=\"A\"/><air:Coupon Key=\"ouvmxVBAAA/B5pgWAJAAAA==\" CouponNumber=\"2\" MarketingCarrier=\"LA\" MarketingFlightNumber=\"3240\" Origin=\"CGH\" Destination=\"GIG\" DepartureTime=\"2018-11-08T19:25:00.000-02:00\" StopoverCode=\"false\" BookingClass=\"O\" FareBasis=\"OJSX0G1\" NotValidBefore=\"2018-11-08\" NotValidAfter=\"2018-11-08\" Status=\"O\" SegmentGroup=\"1\" MarriageGroup=\"0\" ElStat=\"A\"/><air:Coupon Key=\"ouvmxVBAAA/B6pgWAJAAAA==\" CouponNumber=\"4\" MarketingCarrier=\"LA\" MarketingFlightNumber=\"3939\" Origin=\"SDU\" Destination=\"GRU\" DepartureTime=\"2018-11-15T17:05:00.000-02:00\" StopoverCode=\"true\" BookingClass=\"O\" FareBasis=\"OJSX0K1\" NotValidBefore=\"2018-11-15\" NotValidAfter=\"2018-11-15\" Status=\"O\" SegmentGroup=\"2\" MarriageGroup=\"0\" ElStat=\"A\"/></air:Ticket><air:Ticket Key=\"ouvmxVBAAA/B7pgWAJAAAA==\" TicketNumber=\"9579902731370\" TicketStatus=\"N\" ElStat=\"A\"><air:Coupon Key=\"ouvmxVBAAA/B8pgWAJAAAA==\" CouponNumber=\"1\" MarketingCarrier=\"LA\" MarketingFlightNumber=\"3750\" Origin=\"GRU\" Destination=\"CWB\" DepartureTime=\"2018-11-15T20:55:00.000-02:00\" StopoverCode=\"false\" BookingClass=\"O\" FareBasis=\"OJSX0K1\" NotValidBefore=\"2018-11-15\" NotValidAfter=\"2018-11-15\" Status=\"O\" SegmentGroup=\"2\" MarriageGroup=\"0\" ElStat=\"A\"/></air:Ticket><air:AirPricingInfo Key=\"C+QsxVBAAA/BhbD/8IAAAA==\" TotalPrice=\"BRL393.66\" BasePrice=\"BRL292.90\" ApproximateTotalPrice=\"BRL393.66\" ApproximateBasePrice=\"BRL292.90\" Taxes=\"BRL100.76\" LatestTicketingTime=\"2018-08-30T23:59:00.000-03:00\" TrueLastDateToTicket=\"2018-08-30T23:59:00.000-03:00\" PricingMethod=\"GuaranteedUsingAirlinePrivateFare\" Refundable=\"true\" Exchangeable=\"true\" ETicketability=\"Yes\" PlatingCarrier=\"JJ\" ProviderReservationInfoRef=\"XOTzxVdc1BKAc2nC6IAAAA==\" AirPricingInfoGroup=\"1\" Ticketed=\"true\" PricingType=\"StoredFare\" FareCalculationInd=\"A\"><air:FareInfo Key=\"XOTzxVdc1BKAzOjC6IAAAA==\" FareBasis=\"OJSX0G1\" PassengerTypeCode=\"ADT\" Origin=\"BSB\" Destination=\"CGH\" EffectiveDate=\"2018-08-29T00:00:00.000-03:00\" Amount=\"BRL0.00\" NotValidBefore=\"2018-11-08\" NotValidAfter=\"2018-11-08\"><air:ContractCode Code=\"O1JR\" ProviderCode=\"1G\"/><air:BaggageAllowance><air:NumberOfPieces>0</air:NumberOfPieces></air:BaggageAllowance><air:Brand BrandID=\"121970\" Name=\"LIGHT\" Carrier=\"LA\" BrandTier=\"0002\"/></air:FareInfo><air:FareInfo Key=\"XOTzxVdc1BKA0OjC6IAAAA==\" FareBasis=\"OJSX0G1\" PassengerTypeCode=\"ADT\" Origin=\"CGH\" Destination=\"GIG\" EffectiveDate=\"2018-08-29T00:00:00.000-03:00\" Amount=\"BRL132.00\" NotValidBefore=\"2018-11-08\" NotValidAfter=\"2018-11-08\"><air:ContractCode Code=\"O1JR\" ProviderCode=\"1G\"/><air:BaggageAllowance><air:NumberOfPieces>0</air:NumberOfPieces></air:BaggageAllowance><air:Brand BrandID=\"121970\" Name=\"LIGHT\" Carrier=\"LA\" BrandTier=\"0002\"/></air:FareInfo><air:FareInfo Key=\"XOTzxVdc1BKA1OjC6IAAAA==\" FareBasis=\"OJSX0K1\" PassengerTypeCode=\"ADT\" Origin=\"SDU\" Destination=\"GRU\" EffectiveDate=\"2018-08-29T00:00:00.000-03:00\" Amount=\"BRL0.00\" NotValidBefore=\"2018-11-15\" NotValidAfter=\"2018-11-15\"><air:ContractCode Code=\"O1JR\" ProviderCode=\"1G\"/><air:BaggageAllowance><air:NumberOfPieces>0</air:NumberOfPieces></air:BaggageAllowance></air:FareInfo><air:FareInfo Key=\"XOTzxVdc1BKA2OjC6IAAAA==\" FareBasis=\"OJSX0K1\" PassengerTypeCode=\"ADT\" Origin=\"GRU\" Destination=\"CWB\" EffectiveDate=\"2018-08-29T00:00:00.000-03:00\" Amount=\"BRL160.90\" NotValidBefore=\"2018-11-15\" NotValidAfter=\"2018-11-15\"><air:ContractCode Code=\"O1JR\" ProviderCode=\"1G\"/><air:BaggageAllowance><air:NumberOfPieces>0</air:NumberOfPieces></air:BaggageAllowance></air:FareInfo><air:BookingInfo BookingCode=\"O\" CabinClass=\"Economy\" FareInfoRef=\"XOTzxVdc1BKAzOjC6IAAAA==\"/><air:BookingInfo BookingCode=\"O\" CabinClass=\"Economy\" FareInfoRef=\"XOTzxVdc1BKA0OjC6IAAAA==\"/><air:BookingInfo BookingCode=\"O\" CabinClass=\"Economy\" FareInfoRef=\"XOTzxVdc1BKA1OjC6IAAAA==\"/><air:BookingInfo BookingCode=\"O\" CabinClass=\"Economy\" FareInfoRef=\"XOTzxVdc1BKA2OjC6IAAAA==\"/><air:TaxInfo Category=\"BR\" Amount=\"BRL60.76\" Key=\"ouvmxVBAAA/Be0gWAJAAAA==\"/><air:TaxInfo Category=\"DU\" Amount=\"BRL40.00\" Key=\"ouvmxVBAAA/Bf0gWAJAAAA==\"/><air:FareCalc>BSB LA X/SAO LA RIO 132.00OJSX0G1 LA X/SAO LA CWB 160.90OJSX0K1 BRL292.90END</air:FareCalc><air:PassengerType Code=\"ADT\" BookingTravelerRef=\"XOTzxVdc1BKArUWC6IAAAA==\"><air:FareGuaranteeInfo GuaranteeType=\"GuaranteedUsingAirlinePrivateFare\"/></air:PassengerType><common_v44_0:BookingTravelerRef Key=\"XOTzxVdc1BKArUWC6IAAAA==\"/><air:ChangePenalty><air:Amount>BRL0.00</air:Amount></air:ChangePenalty><air:CancelPenalty><air:Amount>BRL393.66</air:Amount></air:CancelPenalty></air:AirPricingInfo><air:BaggageAllowances><air:BaggageAllowanceInfo TravelerType=\"ADT\" Origin=\"BSB\" Destination=\"RIO\" Carrier=\"LA\"><air:URLInfo><air:URL>VIEWTRIP.TRAVELPORT.COM/BAGGAGEPOLICY/LA</air:URL></air:URLInfo><air:TextInfo><air:Text>0P</air:Text><air:Text>BAGGAGE DISCOUNTS MAY APPLY BASED ON FREQUENT FLYER STATUS/ ONLINE CHECKIN/FORM OF PAYMENT/MILITARY/ETC.</air:Text></air:TextInfo><air:BagDetails ApplicableBags=\"1stChecked\"><air:BaggageRestriction><air:TextInfo><air:Text>BAGGAGE CHARGES DATA NOT AVAILABLE</air:Text></air:TextInfo></air:BaggageRestriction></air:BagDetails><air:BagDetails ApplicableBags=\"2ndChecked\"><air:BaggageRestriction><air:TextInfo><air:Text>BAGGAGE CHARGES DATA NOT AVAILABLE</air:Text></air:TextInfo></air:BaggageRestriction></air:BagDetails></air:BaggageAllowanceInfo><air:BaggageAllowanceInfo TravelerType=\"ADT\" Origin=\"RIO\" Destination=\"CWB\" Carrier=\"LA\"><air:URLInfo><air:URL>VIEWTRIP.TRAVELPORT.COM/BAGGAGEPOLICY/LA</air:URL></air:URLInfo><air:TextInfo><air:Text>0P</air:Text><air:Text>BAGGAGE DISCOUNTS MAY APPLY BASED ON FREQUENT FLYER STATUS/ ONLINE CHECKIN/FORM OF PAYMENT/MILITARY/ETC.</air:Text></air:TextInfo><air:BagDetails ApplicableBags=\"1stChecked\"><air:BaggageRestriction><air:TextInfo><air:Text>BAGGAGE CHARGES DATA NOT AVAILABLE</air:Text></air:TextInfo></air:BaggageRestriction></air:BagDetails><air:BagDetails ApplicableBags=\"2ndChecked\"><air:BaggageRestriction><air:TextInfo><air:Text>BAGGAGE CHARGES DATA NOT AVAILABLE</air:Text></air:TextInfo></air:BaggageRestriction></air:BagDetails></air:BaggageAllowanceInfo><air:CarryOnAllowanceInfo Origin=\"BSB\" Destination=\"SAO\" Carrier=\"LA\"><air:TextInfo><air:Text>10K</air:Text></air:TextInfo><air:CarryOnDetails ApplicableCarryOnBags=\"1\"><air:BaggageRestriction><air:TextInfo><air:Text>CHGS MAY APPLY IF BAGS EXCEED TTL WT ALLOWANCE</air:Text></air:TextInfo></air:BaggageRestriction></air:CarryOnDetails><air:CarryOnDetails ApplicableCarryOnBags=\"2\"><air:BaggageRestriction><air:TextInfo><air:Text>CHGS MAY APPLY IF BAGS EXCEED TTL WT ALLOWANCE</air:Text></air:TextInfo></air:BaggageRestriction></air:CarryOnDetails></air:CarryOnAllowanceInfo><air:CarryOnAllowanceInfo Origin=\"SAO\" Destination=\"RIO\" Carrier=\"LA\"><air:TextInfo><air:Text>10K</air:Text></air:TextInfo><air:CarryOnDetails ApplicableCarryOnBags=\"1\"><air:BaggageRestriction><air:TextInfo><air:Text>CHGS MAY APPLY IF BAGS EXCEED TTL WT ALLOWANCE</air:Text></air:TextInfo></air:BaggageRestriction></air:CarryOnDetails><air:CarryOnDetails ApplicableCarryOnBags=\"2\"><air:BaggageRestriction><air:TextInfo><air:Text>CHGS MAY APPLY IF BAGS EXCEED TTL WT ALLOWANCE</air:Text></air:TextInfo></air:BaggageRestriction></air:CarryOnDetails></air:CarryOnAllowanceInfo><air:CarryOnAllowanceInfo Origin=\"RIO\" Destination=\"SAO\" Carrier=\"LA\"><air:TextInfo><air:Text>10K</air:Text></air:TextInfo><air:CarryOnDetails ApplicableCarryOnBags=\"1\"><air:BaggageRestriction><air:TextInfo><air:Text>CHGS MAY APPLY IF BAGS EXCEED TTL WT ALLOWANCE</air:Text></air:TextInfo></air:BaggageRestriction></air:CarryOnDetails><air:CarryOnDetails ApplicableCarryOnBags=\"2\"><air:BaggageRestriction><air:TextInfo><air:Text>CHGS MAY APPLY IF BAGS EXCEED TTL WT ALLOWANCE</air:Text></air:TextInfo></air:BaggageRestriction></air:CarryOnDetails></air:CarryOnAllowanceInfo><air:CarryOnAllowanceInfo Origin=\"SAO\" Destination=\"CWB\" Carrier=\"LA\"><air:TextInfo><air:Text>10K</air:Text></air:TextInfo><air:CarryOnDetails ApplicableCarryOnBags=\"1\"><air:BaggageRestriction><air:TextInfo><air:Text>CHGS MAY APPLY IF BAGS EXCEED TTL WT ALLOWANCE</air:Text></air:TextInfo></air:BaggageRestriction></air:CarryOnDetails><air:CarryOnDetails ApplicableCarryOnBags=\"2\"><air:BaggageRestriction><air:TextInfo><air:Text>CHGS MAY APPLY IF BAGS EXCEED TTL WT ALLOWANCE</air:Text></air:TextInfo></air:BaggageRestriction></air:CarryOnDetails></air:CarryOnAllowanceInfo></air:BaggageAllowances></air:ETR></air:AirTicketingRsp></SOAP:Body></SOAP:Envelope>"
+				}
+			]
+		},
+		{
+			"name": "AirVoidDocument",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "3c22550b-a3b4-4e79-a1e9-f5261d83c426",
+						"type": "text/javascript",
+						"exec": [
+							"cheerio = require('cheerio');",
+							"const $ = cheerio.load(responseBody, {",
+							"  ignoreWhitespace: true,",
+							"  xmlMode: true",
+							"});",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Not SOAP Fault', function () {",
+							"    pm.expect($('SOAP\\\\:Fault').length).equal(0);",
+							"});",
+							"",
+							""
+						]
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "ebd1a2fe-48b9-4395-bd9d-420d51c43d51",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n\t<soap:Body>\r\n\t\t<AirVoidDocumentReq TraceId=\"{{TraceId}}\" TargetBranch=\"{{Branch}}\" xmlns=\"http://www.travelport.com/schema/air_{{SchemaVersion}}_0\">\r\n\t\t\t<BillingPointOfSaleInfo OriginApplication=\"{{OriginApplication}}\" xmlns=\"http://www.travelport.com/schema/common_{{SchemaVersion}}_0\" />\r\n\t\t\t<AirReservationLocatorCode xmlns=\"http://www.travelport.com/schema/air_{{SchemaVersion}}_0\">{{AirReservationLoc}}</AirReservationLocatorCode>\r\n\t\t\t<VoidDocumentInfo DocumentType=\"E-Ticket\" DocumentNumber=\"9579902100701\" xmlns=\"http://www.travelport.com/schema/air_{{SchemaVersion}}_0\" />\r\n\t\t</AirVoidDocumentReq>\r\n\t</soap:Body>\r\n</soap:Envelope>"
+				},
+				"url": {
+					"raw": "{{URL}}/AirService",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"AirService"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UniversalRecordCancel",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "3c22550b-a3b4-4e79-a1e9-f5261d83c426",
+						"type": "text/javascript",
+						"exec": [
+							"cheerio = require('cheerio');",
+							"const $ = cheerio.load(responseBody, {",
+							"  ignoreWhitespace: true,",
+							"  xmlMode: true",
+							"});",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Not SOAP Fault', function () {",
+							"    pm.expect($('SOAP\\\\:Fault').length).equal(0);",
+							"});",
+							"",
+							""
+						]
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "ebd1a2fe-48b9-4395-bd9d-420d51c43d51",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n\t<soap:Body>\r\n\t\t<univ:UniversalRecordCancelReq TraceId=\"{{TraceId}}\" TargetBranch=\"{{Branch}}\" UniversalRecordLocatorCode=\"{{UniversalRecordLoc}}\" Version=\"0\" xmlns:univ=\"http://www.travelport.com/schema/universal_{{SchemaVersion}}_0\" xmlns:com=\"http://www.travelport.com/schema/common_{{SchemaVersion}}_0\">\r\n\t\t  <com:BillingPointOfSaleInfo OriginApplication=\"{{OriginApplication}}\" />\r\n\t\t</univ:UniversalRecordCancelReq>\r\n\t</soap:Body>\r\n</soap:Envelope>"
+				},
+				"url": {
+					"raw": "{{URL}}/UniversalRecordService",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"UniversalRecordService"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "password",
+				"value": "{{Password}}",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "{{Username}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "07747220-74eb-4aa0-8065-c8da47bd1f89",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "7b12a84c-2a6a-4231-a8ef-78fad447ad52",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
